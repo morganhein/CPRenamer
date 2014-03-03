@@ -107,6 +107,7 @@ def selectID(movies):
         print 'Skipping.\n'
         return None
     else:
+        print '\n'
         try:
             #if keystroke is not null, then see if it's an index out of the movies list
             selection = movies[int(keystroke)]
