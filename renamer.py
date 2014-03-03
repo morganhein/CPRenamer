@@ -17,6 +17,7 @@ from urllib import quote
 from urllib2 import urlopen
 from re import sub
 
+
 #All them globals, son.
 #or just the one.
 workingDir = sys.argv[1]
@@ -102,48 +103,71 @@ def selectID(movies):
             #guess not, so try searching the omdb for it
             return selectID(search(keystroke))
 
-def move(location, f, imdb):
+
+def move(location, f):
     '''
-    Either create a folder for this movie and move it or
-    append the couchpotato tag to the subfolder the movie is in
+    Create a folder for this movie and move it if it
+    is not already in a subfolder.
     '''
     #check if this is in the root folder
     if location == workingDir:
         #if it is, then create a folder and move the file
-        new_folder = os.path.join( location, f + ".cp(" + imdb + ")" )
+        new_folder = os.path.join( location, f )
         try:
             os.mkdir( new_folder )
+        except OSError:
+            pass
+        try:
             os.rename( os.path.join(location, f), os.path.join( new_folder, f ))
             print "Moved file into folder\n"
         except OSError as e:
-            print "Error: " + e
-        
-    else:
-        #if not then append the .cp(tt##) tag to the subfolder
-        try: 
-            os.rename ( location, location + ".cp(" + imdb + ")" )
-            print "Renamed folder\n"
-        except OSError as e:
-            print "Error: " + e
+            print "Error: " + e.strerror
 
+def createNFO(directory, id):
+    '''
+    Create an NFO with the imdb link for this movie.
+    '''
+    with open(os.path.join(directory, 'couchpotato.nfo'), 'a') as nfo:
+        nfo.write('http://www.imdb.com/title/%s' % id)
+        
+def chooseBetween(folder, filename):
+    fo = folder.rstrip('\\').rstrip('//')
+    fi = os.path.splitext(filename)[0]
+    if len(fo) >= len(fi):
+        return folder
+    return filename
+
+def nFOExists(files):
+    for f in files:
+        if "nfo" in toLowerCase(f):
+            return True
+    return False
+
+def toLowerCase(input):
+    out = ""
+    for char in input:
+        out += char.lower()
+    return out
+        
 def run():
     ext = (".mkv", ".avi", ".divx", ".xvid", ".mov", "mp4")
     for (dirpath, dirnames, filenames) in os.walk(workingDir):
         #check to make sure this isn't already a sorted folder
-        if ".cp(tt" not in dirpath:
+        if ".cp(tt" not in dirpath and not nFOExists(filenames):
             for f in filenames:
                 #check if the file still exists
                 if os.path.isfile(os.path.join(dirpath, f)):
                     #check to make sure it has the extension of a movie.
                     if os.path.splitext(f)[1].lower() in ext:
-                        #clean it upsud
-                        clean = cutTheFat(f)
+                        #Choose between the directory name or the filename then clean the string up
+                        clean = cutTheFat(chooseBetween(dirpath, f))
                         print "New Title: ", clean, " -- ", os.path.split(dirpath)[1] + "/" + f
                         #find out what it is
                         result = selectID(search(clean))
                         if result:
-                            #if it's anything, then move it!
-                            move(dirpath, f, result['imdbID'])
+                            #check if it needs it's own folder and move it
+                            move(dirpath, f)
+                            createNFO(os.path.join(workingDir, dirpath), result['imdbID'])
                 else:
                     print 'File already sorted. Skipping: %s\n' % f
 
