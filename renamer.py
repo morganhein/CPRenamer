@@ -112,7 +112,7 @@ def move(location, f):
     #check if this is in the root folder
     if location == workingDir:
         #if it is, then create a folder and move the file
-        new_folder = os.path.join( location, f )
+        new_folder = os.path.join( location, os.path.splitext(f)[0] )
         try:
             os.mkdir( new_folder )
         except OSError:
@@ -120,8 +120,11 @@ def move(location, f):
         try:
             os.rename( os.path.join(location, f), os.path.join( new_folder, f ))
             print "Moved file into folder\n"
+            return new_folder
         except OSError as e:
             print "Error: " + e.strerror
+    else:
+        return location
 
 def createNFO(directory, id):
     '''
@@ -134,7 +137,7 @@ def chooseBetween(folder, filename):
     fo = folder.rstrip('\\').rstrip('//')
     fi = os.path.splitext(filename)[0]
     if len(fo) >= len(fi):
-        return folder
+        return os.path.basename(folder)
     return filename
 
 def nFOExists(files):
@@ -166,8 +169,8 @@ def run():
                         result = selectID(search(clean))
                         if result:
                             #check if it needs it's own folder and move it
-                            move(dirpath, f)
-                            createNFO(os.path.join(workingDir, dirpath), result['imdbID'])
+                            movedTo = move(dirpath, f)
+                            createNFO(movedTo, result['imdbID'])
                 else:
                     print 'File already sorted. Skipping: %s\n' % f
 
