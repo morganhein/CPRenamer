@@ -22,18 +22,25 @@ from re import sub
 #or just the one.
 workingDir = sys.argv[1]
 
-def cutTheFat(input):
+def cutTheFat(filename):
     '''
     Culls the herd, cuts the fat, trims the lines.
     Removes all meta-properties from the filename.
     '''
-    replace = ["720p", "1080p", "r5", "r6", "xvid", "ac3", "dd5.1", "5.1", "hq", "bluray", "x264", "480p", \
-    "brrip", "web-dl", "h264", "h.264", "dvdrip", "hddvd", "aac2.0", "aac2", "dts", "hdrip", "avchd", "blu-ray"]
-    
     f = ""
     
+    cap_replace = ["LIMITED", "EXTENDED", "UNRATED"]
+
+    for rep in cap_replace:
+        filename = filename.replace(rep, "")
+
+    replace = ["720p", "1080p", "r5", "r6", "xvid", "ac3", "dd5.1", "5.1", "hq", "bluray", "x264", "480p", \
+    "brrip", "web-dl", "h264", "h.264", "dvdrip", "hddvd", "aac2.0", "aac2", "dts", "hdrip", "avchd", "blu-ray", \
+    "hdtv", "webrip"]
+    
+    
     #convert to lowercase
-    for char in input:
+    for char in filename:
         f += char.lower()
     #strip the f extension    
     f = os.path.splitext(f)[0]
@@ -57,7 +64,11 @@ def search(title):
     Searches the OMDB for the specified string
     and returns the result, if any.
     '''
-    title = title.encode("utf-8")
+    try: 
+        title = title.encode("utf-8")
+    except UnicodeDecodeError:
+        print "Error processing non-unicode text."
+        return None
     url = "http://www.omdbapi.com/?r=json&s=%s" % quote(title)
     #print url
     data = urlopen(url).read().decode("utf-8")
@@ -86,6 +97,7 @@ def selectID(movies):
     keystroke = raw_input("selection: ")
     #if it's a blank keystroke, then just continue with the default
     if keystroke == "" and movies:
+        print '\n'
         return movies[0]
     elif keystroke == "" and not movies:
         print 'Skipping.\n'
